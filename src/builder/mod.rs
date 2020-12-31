@@ -16,7 +16,7 @@ pub fn aldous_broder_seeded(base: &mut Grid, seed: u64) {
     let random_index: usize = rng.gen_range(0..cell_list.len() - 1);
     let mut cell = cell_list.remove(random_index);
     let mut visited = HashSet::new();
-    visited.insert(cell.clone());
+    visited.insert(cell);
     while !cell_list.is_empty() {
         let mut neighbors = base.neighbors(cell);
         let rindex: u8 = rng.gen();
