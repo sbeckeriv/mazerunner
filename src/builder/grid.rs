@@ -1,5 +1,3 @@
-use rand::prelude::*;
-use rand_pcg::Pcg64;
 use std::collections::HashSet;
 use std::fmt;
 
@@ -13,9 +11,9 @@ pub enum LinkDirections {
 
 #[derive(Debug, Default, Clone)]
 pub struct Cell {
-    row: usize,
-    column: usize,
-    links: HashSet<LinkDirections>,
+    pub row: usize,
+    pub column: usize,
+    pub links: HashSet<LinkDirections>,
 }
 
 impl Cell {
@@ -40,9 +38,9 @@ impl Cell {
 
 #[derive(Debug, Default)]
 pub struct Grid {
-    rows: usize,
-    columns: usize,
-    grid: Vec<Vec<Cell>>,
+    pub rows: usize,
+    pub columns: usize,
+    pub grid: Vec<Vec<Cell>>,
 }
 
 impl Grid {
@@ -61,6 +59,15 @@ impl Grid {
             columns,
             grid,
         }
+    }
+    pub fn cell_locations(&self) -> Vec<(usize, usize)> {
+        let mut grid = Vec::with_capacity(self.rows * self.columns);
+        for row in 0..self.rows {
+            for column in 0..self.columns {
+                grid.push((row, column));
+            }
+        }
+        grid
     }
 
     pub fn link(&mut self, row: usize, column: usize, direction: LinkDirections) {
@@ -82,26 +89,23 @@ impl Grid {
         self.grid[row][column].link(clone);
     }
 
-    pub fn neighbors(self, cell: Cell) -> Vec<(usize, usize)> {
+    pub fn neighbors(&self, cell: (usize, usize)) -> Vec<((usize, usize), LinkDirections)> {
         let mut neighbors = Vec::new();
-        // add west
-        if cell.row > 0 {
-            neighbors.push((cell.row - 1, cell.column));
+        let (row, column) = cell;
+        if row > 0 {
+            neighbors.push(((row - 1, column), LinkDirections::South));
         }
 
-        // add east
-        if cell.row < self.rows {
-            neighbors.push((cell.row + 1, cell.column));
+        if row < self.rows - 1 {
+            neighbors.push(((row + 1, column), LinkDirections::North));
         }
 
-        // add north
-        if cell.column > 0 {
-            neighbors.push((cell.row, cell.column - 1));
+        if column > 0 {
+            neighbors.push(((row, column - 1), LinkDirections::West));
         }
 
-        // add north
-        if cell.column > self.columns {
-            neighbors.push((cell.row, cell.column + 1));
+        if column < self.columns - 1 {
+            neighbors.push(((row, column + 1), LinkDirections::East));
         }
         neighbors
     }
@@ -133,7 +137,7 @@ impl fmt::Display for Grid {
 
                     [true, false, false, true] => "__|",
 
-                    [false, false, false, false] => "|*|", //all walls
+                    [false, false, false, false] => "**|", //all walls
 
                     [false, true, false, false] => "___",
                     [false, true, false, true] => "___",
@@ -162,26 +166,3 @@ impl fmt::Display for Grid {
 // 3
 // 4
 // 5
-pub fn sidewinder(base: &mut Grid) {
-    let mut rng = Pcg64::seed_from_u64(2);
-    for row in (0..base.rows) {
-        let mut run = vec![];
-        for column in (0..base.columns) {
-            run.push((row, column));
-            let far_east = column == base.columns - 1;
-            let far_north = row == base.rows - 1;
-            let coin: u8 = rng.gen();
-            let close_out = far_east || (!far_north && coin % 2 == 0);
-            if close_out {
-                let member = run.choose(&mut rng).unwrap();
-                if member.0 < base.rows - 1 {
-                    // is not at the top
-                    base.link(member.0, member.1, LinkDirections::North);
-                }
-                run.clear();
-            } else {
-                base.link(row, column, LinkDirections::East);
-            }
-        }
-    }
-}
