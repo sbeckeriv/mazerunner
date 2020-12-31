@@ -7,6 +7,7 @@ pub enum LinkDirections {
     West,
     North,
     South,
+    Other,
 }
 
 #[derive(Debug, Default, Clone)]
