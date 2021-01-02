@@ -12,5 +12,11 @@ fn main() {
     builder::wilsions_seeded(&mut base, 2);
     println!("Wilsions:\n{}", base);
 
+    dbg!("base");
+    let mut base = builder::grid::Grid::new(30, 40);
+    dbg!("seeded");
+    builder::hunt_and_kill_seeded(&mut base, 2);
+    println!("Hunt and Kill:\n{}", base);
+
     //dbg!(base);
 }

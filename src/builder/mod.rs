@@ -5,6 +5,61 @@ use rand::prelude::*;
 use rand_pcg::Pcg64;
 use std::collections::HashSet;
 
+pub fn hunt_and_kill(base: &mut Grid) {
+    let mut rng = rand::thread_rng();
+    let seed: u64 = rng.gen();
+    hunt_and_kill_seeded(base, seed)
+}
+
+pub fn hunt_and_kill_seeded(base: &mut Grid, seed: u64) {
+    let mut rng = Pcg64::seed_from_u64(seed);
+    let mut visited = HashSet::new();
+
+    let row: u64 = rng.gen();
+    let row = row as usize % base.rows;
+
+    let column: u64 = rng.gen();
+    let column = column as usize % base.columns;
+
+    let mut current = Some((row, column));
+
+    while current.is_some() {
+        let neighbors = base.neighbors(current.unwrap());
+        let not_visited: Vec<_> = neighbors
+            .iter()
+            .filter(|n| !visited.contains(&n.0))
+            .collect();
+
+        if not_visited.len() > 0 {
+            let rindex: u64 = rng.gen();
+            let rindex = rindex as usize % not_visited.len();
+            let neighbor = not_visited[rindex];
+            visited.insert(neighbor.0.clone());
+
+            base.link(current.unwrap().0, current.unwrap().1, neighbor.1.clone());
+            current = Some(neighbor.0);
+        } else {
+            current = None;
+            'outer: for row in (0..base.rows).rev() {
+                for column in 0..base.columns {
+                    if !visited.contains(&(row, column)) {
+                        if let Some(found) = base
+                            .neighbors((row, column))
+                            .iter()
+                            .find(|n| visited.contains(&n.0))
+                        {
+                            base.link(row, column, found.1.clone());
+                            visited.insert((row, column));
+                            current = Some((row, column));
+                            break 'outer;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 pub fn wilsons(base: &mut Grid) {
     let mut rng = rand::thread_rng();
     let seed: u64 = rng.gen();
@@ -13,7 +68,6 @@ pub fn wilsons(base: &mut Grid) {
 
 pub fn wilsions_seeded(base: &mut Grid, seed: u64) {
     let mut rng = Pcg64::seed_from_u64(seed);
-
     let mut unvisited = base.cell_locations();
 
     let random_index: usize = rng.gen_range(0..unvisited.len() - 1);
@@ -30,8 +84,6 @@ pub fn wilsions_seeded(base: &mut Grid, seed: u64) {
         let mut directions: Vec<LinkDirections> = vec![LinkDirections::Other];
 
         while unvisited.contains(&cell) {
-            //    println!("_____{}-{}____", cell.0, cell.1);
-
             let neighbors = base.neighbors(cell);
 
             let rindex: u8 = rng.gen();
@@ -41,7 +93,6 @@ pub fn wilsions_seeded(base: &mut Grid, seed: u64) {
             let position = path.iter().position(|&x| x == cell);
             if let Some(index) = position {
                 let index = if index == 0 { 1 } else { index };
-                //println!("************");
                 path.truncate(index);
                 directions.truncate(index);
                 cell = path.last().unwrap().clone();
@@ -89,7 +140,6 @@ pub fn aldous_broder_seeded(base: &mut Grid, seed: u64) {
 
             cell_list.retain(|x| x != &link_neighbor.0);
         }
-        //dbg!(&cell_list);
         cell = link_neighbor.0;
     }
 }
